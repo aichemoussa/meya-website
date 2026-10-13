@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MEYA</title>
+<meta name="description" content="MEYA is a private, open-source messenger for families and close friends, being built on Signal's post-quantum Triple Ratchet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column with one wide "three strands" band, a ledger of what the server sees, and an honest status table. */
+:root {
+  --navy: #044D8C;      /* MEYA deep blue */
+  --sky: #49B1F2;       /* MEYA light blue */
+  --mist: #EBF2F2;      /* MEYA light neutral */
+  --ink: #0D0D0D;       /* MEYA near-black */
+  --indigo: #424D8C;    /* MEYA blue-purple */
+
+  --bg: var(--mist);
+  --surface: #FFFFFF;
+  --fg: var(--ink);
+  --muted: #46536B;
+  --line: #C9D7DE;
+  --accent: var(--navy);
+  --accent-2: var(--sky);
+  --accent-3: var(--indigo);
+  --on-accent: #FFFFFF;
+  --ok: #1F7A4D;
+  --ok-bg: #DDF1E6;
+  --wip: #8A5A00;
+  --wip-bg: #F8EBCF;
+  --plan: #424D8C;
+  --plan-bg: #E3E6F6;
+
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --step--1: 0.875rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3rem;
+  --step-2: 1.7rem;
+  --step-3: clamp(2rem, 4.5vw, 2.6rem);
+  --step-4: clamp(2.5rem, 7vw, 4.25rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #07121F;
+    --surface: #0E1D30;
+    --fg: #E8F0F2;
+    --muted: #A7B6C6;
+    --line: #22364D;
+    --accent: #6CC2F5;
+    --accent-2: #49B1F2;
+    --accent-3: #9AA5E6;
+    --on-accent: #04121F;
+    --ok: #7FD8A8;
+    --ok-bg: #12362A;
+    --wip: #F2C46B;
+    --wip-bg: #3A2C0E;
+    --plan: #B7BEF0;
+    --plan-bg: #22284D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #07121F;
+  --surface: #0E1D30;
+  --fg: #E8F0F2;
+  --muted: #A7B6C6;
+  --line: #22364D;
+  --accent: #6CC2F5;
+  --accent-2: #49B1F2;
+  --accent-3: #9AA5E6;
+  --on-accent: #04121F;
+  --ok: #7FD8A8;
+  --ok-bg: #12362A;
+  --wip: #F2C46B;
+  --wip-bg: #3A2C0E;
+  --plan: #B7BEF0;
+  --plan-bg: #22284D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  padding-inline: 20px;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.wrap { max-width: 68rem; margin-inline: auto; }
+.read { max-width: 40rem; }
+
+/* Header */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding-block: 22px;
+}
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--fg); }
+.mark {
+  width: 40px; height: 40px; border-radius: 12px; background: var(--navy);
+  display: grid; place-items: center; color: #FFFFFF; font-family: var(--display); font-weight: 800; font-size: 22px;
+}
+.brand span { font-family: var(--display); font-weight: 800; letter-spacing: 0.14em; font-size: 1.15rem; }
+.nav { display: flex; gap: 20px; flex-wrap: wrap; font-size: var(--step--1); }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover { color: var(--accent); }
+
+/* Hero */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; align-items: center;
+  padding-block: 40px 64px;
+}
+.eyebrow {
+  font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-3);
+}
+.hero h1 { font-size: var(--step-4); font-weight: 800; letter-spacing: -0.02em; margin-top: 14px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { font-size: var(--step-1); color: var(--muted); margin-top: 20px; max-width: 34rem; line-height: 1.5; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; border-radius: 14px;
+  font-weight: 700; text-decoration: none; font-size: 1rem; border: 2px solid transparent;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-ghost { border-color: var(--line); color: var(--fg); }
+.btn-ghost:hover { border-color: var(--accent); }
+.status-line { margin-top: 18px; font-size: var(--step--1); color: var(--muted); }
+
+/* Hero phone: a pairing moment */
+.phone {
+  justify-self: center; width: min(100%, 300px); aspect-ratio: 9 / 17; max-width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 36px; padding: 18px;
+  display: flex; flex-direction: column; gap: 14px; box-shadow: 0 30px 60px -30px rgba(4, 77, 140, 0.35);
+}
+.phone-bar { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+.phone h3 { font-size: 1.05rem; }
+.qr { width: 100%; aspect-ratio: 1; border-radius: 18px; background: #FFFFFF; padding: 14px; border: 1px solid var(--line); }
+.qr canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.verify {
+  border-radius: 14px; background: var(--bg); padding: 12px; font-size: 0.8rem; color: var(--muted);
+}
+.verify b { display: block; color: var(--fg); font-family: var(--mono); font-size: 0.82rem; letter-spacing: 0.05em; margin-top: 4px; }
+
+/* Sections */
+section { padding-block: 56px; border-top: 1px solid var(--line); }
+.section-head { display: grid; gap: 12px; margin-bottom: 32px; }
+.section-head h2 { font-size: var(--step-3); font-weight: 700; letter-spacing: -0.01em; }
+.section-head p { color: var(--muted); max-width: 40rem; }
+
+/* Steps (a real sequence) */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; counter-reset: step; }
+.steps li { display: grid; gap: 8px; align-content: start; counter-increment: step; }
+.steps li::before {
+  content: counter(step); font-family: var(--display); font-weight: 800; font-size: 1.1rem;
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent);
+}
+.steps h3 { font-size: var(--step-1); }
+.steps p { color: var(--muted); }
+
+/* Triple Ratchet band */
+.ratchet {
+  background: var(--navy); color: #EAF4FB; border-radius: 28px; padding: clamp(24px, 5vw, 48px);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 40px; align-items: center;
+}
+.ratchet .eyebrow { color: #9FD6F8; }
+.ratchet h2 { font-size: var(--step-3); color: #FFFFFF; margin-top: 10px; }
+.ratchet p { color: #C9DDEC; margin-top: 14px; }
+.ratchet code { font-family: var(--mono); font-size: 0.9em; color: #FFFFFF; }
+.strands { width: 100%; height: auto; display: block; }
+.strand-legend { display: grid; gap: 10px; margin-top: 18px; list-style: none; padding: 0; }
+.strand-legend li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: var(--step--1); color: #C9DDEC; }
+.swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; transform: translateY(2px); }
+
+/* Ledger */
+.ledger { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.ledger > div { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; min-width: 0; }
+.ledger h3 { font-size: var(--step-1); display: flex; align-items: center; gap: 10px; }
+.ledger ul { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.ledger li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+.ledger li span:first-child { font-family: var(--mono); font-weight: 600; }
+.sees li span:first-child { color: var(--wip); }
+.never li span:first-child { color: var(--ok); }
+.note { margin-top: 16px; font-size: var(--step--1); color: var(--muted); }
+
+/* Status table */
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; }
+th, td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td:first-child { font-weight: 700; }
+td:last-child { color: var(--muted); font-size: var(--step--1); }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.wip { background: var(--wip-bg); color: var(--wip); }
+.pill.plan { background: var(--plan-bg); color: var(--plan); }
+
+/* Open source + plans */
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel h3 { font-size: var(--step-2); }
+.panel p, .panel li { color: var(--muted); }
+.panel ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.licence { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); }
+
+footer { border-top: 1px solid var(--line); padding-block: 32px 48px; display: grid; gap: 10px; color: var(--muted); font-size: var(--step--1); }
+
+@media (max-width: 820px) {
+  .hero, .ratchet, .ledger, .duo { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .phone { width: min(100%, 260px); }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" aria-label="MEYA home"><div class="mark" aria-hidden="true">M</div><span>MEYA</span></a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#protocol">Encryption</a>
+      <a href="#server">What we see</a>
+      <a href="#status">Status</a>
+      <a href="#open">Open source</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Private messenger · In development</p>
+        <h1>Your family's conversations stay <em>between you</em>.</h1>
+        <p class="lede">MEYA is a messenger for the people closest to you. You add contacts only in person, by scanning their QR code, and every message is encrypted on your phone before it leaves.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#status">See what's ready</a>
+          <a class="btn btn-ghost" href="#protocol">How the encryption works</a>
+        </div>
+        <p class="status-line">Not yet available for download. Android comes first.</p>
+      </div>
+
+      <div class="phone" role="img" aria-label="Illustration of the MEYA pairing screen with a QR code and a safety code to compare">
+        <div class="phone-bar"><span>MEYA</span><span>Add a person</span></div>
+        <h3>Scan to connect</h3>
+        <div class="qr"><canvas id="qr" width="29" height="29"></canvas></div>
+        <div class="verify">Compare this safety code in person
+          <b>4821 0937 5512 6640</b>
+        </div>
+      </div>
+    </div>
+
+    <section id="how">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>No phone-number discovery. No strangers.</h2>
+        <p>MEYA has no public directory and doesn't search your address book. Every connection starts with two people in the same room.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <h3>Meet and scan</h3>
+          <p>One person shows their MEYA QR code. The other scans it. The code carries their identity key, so nobody in between can swap it.</p>
+        </li>
+        <li>
+          <h3>Accept the request</h3>
+          <p>The person you scanned accepts. MEYA checks that the reply matches the exact key in the QR code before it trusts the contact.</p>
+        </li>
+        <li>
+          <h3>Talk privately</h3>
+          <p>Messages are encrypted on your phone and decrypted only on theirs. If a contact's key ever changes, MEYA warns you instead of switching silently.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="protocol">
+      <div class="ratchet">
+        <div>
+          <p class="eyebrow">Encryption</p>
+          <h2>Three ratchets, braided together</h2>
+          <p>MEYA is being built on the Triple Ratchet, the protocol Signal introduced in 2025. A classical ratchet and a post-quantum ratchet each produce a key for every message, and the two keys are mixed with <code>HKDF</code>. An attacker would have to break both.</p>
+          <p>Sessions begin with <code>PQXDH</code>, which combines <code>X25519</code> with <code>ML-KEM-1024</code>. After that, the post-quantum ratchet (SPQR) keeps refreshing keys with <code>ML-KEM-768</code>. We use Signal's own open-source implementation unchanged. We don't write our own cryptography.</p>
+          <ul class="strand-legend">
+            <li><i class="swatch" style="background:#49B1F2"></i><span>Symmetric ratchet: a fresh key for every message</span></li>
+            <li><i class="swatch" style="background:#FFFFFF"></i><span>Diffie-Hellman ratchet (X25519): heals after a key is exposed</span></li>
+            <li><i class="swatch" style="background:#9AA5E6"></i><span>Sparse post-quantum ratchet (ML-KEM-768): protects against future quantum computers</span></li>
+          </ul>
+        </div>
+        <canvas class="strands" id="strands" width="560" height="360" role="img" aria-label="Three strands braided together, standing for the three ratchets that produce each message key"></canvas>
+      </div>
+    </section>
+
+    <section id="server">
+      <div class="section-head">
+        <p class="eyebrow">What our server sees</p>
+        <h2>The relay carries envelopes it can't open</h2>
+        <p>MEYA's relay only passes encrypted messages between phones and holds them while a phone is offline. Here's what that means in practice.</p>
+      </div>
+      <div class="ledger">
+        <div class="sees">
+          <h3>The relay can see</h3>
+          <ul>
+            <li><span>·</span><span>A random device ID for each phone</span></li>
+            <li><span>·</span><span>Which device sent an envelope to which device, and when</span></li>
+            <li><span>·</span><span>The size of each encrypted envelope</span></li>
+          </ul>
+        </div>
+        <div class="never">
+          <h3>The relay never sees</h3>
+          <ul>
+            <li><span>✓</span><span>What your messages say</span></li>
+            <li><span>✓</span><span>Your private keys, which stay on your phone</span></li>
+            <li><span>✓</span><span>Your contact list or address book</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">We're working to reduce the routing information the relay sees. Envelopes are deleted from the relay once the recipient's phone confirms delivery.</p>
+    </section>
+
+    <section id="status">
+      <div class="section-head">
+        <p class="eyebrow">Status · October 2026</p>
+        <h2>What works today, and what doesn't yet</h2>
+        <p>We only mark something ready once it has passed its tests. Everything else is labelled honestly.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Feature</th><th scope="col">Status</th><th scope="col">Notes</th></tr></thead>
+          <tbody>
+            <tr><td>QR pairing and contact trust</td><td><span class="pill ok">Unit-tested</span></td><td>A reply must match the key in the scanned QR code. Changed keys are refused.</td></tr>
+            <tr><td>Device sign-in to the relay</td><td><span class="pill ok">Built</span></td><td>Each phone proves its identity with its own signing key.</td></tr>
+            <tr><td>Triple Ratchet encryption</td><td><span class="pill wip">In testing</span></td><td>Signal's libsignal is being tested in MEYA's secure core.</td></tr>
+            <tr><td>One-to-one encrypted chat</td><td><span class="pill plan">Next</span></td><td>Follows once the Triple Ratchet tests pass.</td></tr>
+            <tr><td>Encrypted photos and files</td><td><span class="pill plan">Planned</span></td><td>Encrypted on your phone before upload.</td></tr>
+            <tr><td>Family groups</td><td><span class="pill plan">Planned</span></td><td>Group encryption design still to be chosen.</td></tr>
+            <tr><td>Voice and video calls</td><td><span class="pill plan">Planned</span></td><td>Availability depends on local telecom rules in each country.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="open">
+      <div class="duo">
+        <div class="panel">
+          <p class="eyebrow">Open source</p>
+          <h3>Read every line</h3>
+          <p>MEYA will be published under the GNU Affero General Public License, version 3. Anyone can inspect, build and verify the code that protects their messages.</p>
+          <p class="licence">AGPL-3.0-only</p>
+          <p>The source repository opens with the first public release.</p>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">How MEYA is funded</p>
+          <h3>No ads. No data sales.</h3>
+          <p>The app will be free. We plan to fund MEYA through optional paid plans for the hosted service:</p>
+          <ul>
+            <li>Family plans with more storage for photos and videos</li>
+            <li>Encrypted backups</li>
+            <li>Support for organisations</li>
+          </ul>
+          <p>Pricing will be announced before launch.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>MEYA is developed by PRIMA ELITE Learning Solutions–AI.</p>
+    <p>MEYA uses libsignal by Signal Messenger, LLC, under the AGPL-3.0 licence. MEYA is not affiliated with or endorsed by Signal.</p>
+    <p>Security researchers: a vulnerability reporting address will be published with the first public release.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Decorative QR-style pattern (not a real QR code), drawn from a fixed seed.
+  var c = document.getElementById('qr');
+  if (c && c.getContext) {
+    var g = c.getContext('2d'), n = 29, s = 9301;
+    function rnd() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, n, n);
+    g.fillStyle = '#0D0D0D';
+    function finder(x, y) {
+      g.fillRect(x, y, 7, 7); g.fillStyle = '#FFFFFF'; g.fillRect(x + 1, y + 1, 5, 5);
+      g.fillStyle = '#0D0D0D'; g.fillRect(x + 2, y + 2, 3, 3);
+    }
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      var inFinder = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+      if (!inFinder && rnd() > 0.52) g.fillRect(x, y, 1, 1);
+    }
+    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+  }
+
+  // Three braided strands for the Triple Ratchet.
+  var cv = document.getElementById('strands');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var colors = ['#49B1F2', '#FFFFFF', '#9AA5E6'];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    // Message keys as small ticks along the bottom.
+    ctx.fillStyle = 'rgba(234,244,251,0.35)';
+    for (var k = 0; k < 14; k++) ctx.fillRect(28 + k * 37, H - 22, 18, 4);
+    for (var i = 0; i < 3; i++) {
+      ctx.beginPath();
+      for (var x = 0; x <= W; x += 4) {
+        var phase = (x / W) * Math.PI * 4 + t + i * (Math.PI * 2 / 3);
+        var y = H / 2 - 20 + Math.sin(phase) * 70;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = colors[i];
+      ctx.lineWidth = 9;
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.92;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (reduce) { draw(0.6); return; }
+  var t0 = null;
+  function loop(ts) { if (t0 === null) t0 = ts; draw(0.6 + (ts - t0) / 2600); requestAnimationFrame(loop); }
+  draw(0.6);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
