@@ -19,7 +19,7 @@ conversation can read it.
 
 | Area | What works |
 |---|---|
-| **Connecting** | In-person pairing with a QR code; a safety-number screen to verify a contact's encryption; a warning if a contact's key ever changes |
+| **Connecting** | In-person pairing with a QR code, or a one-time invite link; a safety-number screen to verify a contact's encryption; a warning if a contact's key ever changes |
 | **Messages** | Text, voice messages, photos, videos (recorded in the app, with preview thumbnails) and files up to 100 MB |
 | **Conversations** | Replies, emoji reactions, forwarding, pinning, favourites, editing, delete for me or for everyone, search, mute, archive, unread counts |
 | **Delivery** | Sent, delivered and read ticks (read receipts can be switched off); messages written offline are sent when you reconnect, and never arrive twice |
@@ -27,19 +27,22 @@ conversation can read it.
 | **Status and profile** | Profile, About and status updates shared only with the people you choose; statuses expire on their own |
 | **Safety** | Block and report |
 | **Accessibility and language** | Light, dark and high-contrast themes, adjustable text size, reduced motion, screen-reader labels, 20 languages including right-to-left scripts |
+| **Notifications** | Messages, invitations, calls, reactions and statuses, with sound and vibration, also when MEYA is closed |
+| **Groups** | Private groups, each message sent to every member over their own encrypted session |
 
-Not available yet: groups, push notifications while the app is closed, and
-iPhone builds. These are planned, and will be listed here when they are ready.
+Not available yet: iPhone builds. It is planned, and will be listed here when it is ready.
 
 ## Privacy and security
 
 - **End-to-end encrypted.** Messages, voice messages, media, statuses, profiles,
   calendar invitations and calls are encrypted on your phone and opened only on
   the recipient's phone. MEYA's servers cannot read them.
-- **Proven building blocks.** MEYA does not invent its own cryptography. It is
-  built on the open-source [libsignal](https://github.com/signalapp/libsignal)
-  library from the Signal project, and on the encryption built into WebRTC for
-  calls. MEYA is not affiliated with or endorsed by Signal.
+- **Proven building blocks.** MEYA does not invent new cryptographic
+  algorithms or protocols. Messages use the open-source
+  [libsignal](https://github.com/signalapp/libsignal) library from the Signal
+  project, and calls use the encryption built into WebRTC. MEYA's own code
+  around them has not yet had an independent security review. MEYA is not
+  affiliated with or endorsed by Signal.
 - **Encrypted on the phone.** The app's database, messages and media are
   encrypted with keys kept in the phone's secure key storage, and MEYA's data is
   left out of cloud backups.
